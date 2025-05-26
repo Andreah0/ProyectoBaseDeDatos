@@ -39,9 +39,39 @@ BEGIN
         @nuevo_costo AS NuevoCostoTotal
 END;
 GO
-EXEC ActualizarCostoReserva 1;
-GO
 
+-- -----------------------------------------------------------
+-- Obtener Disponibilidad De Alojamiento
+-- -----------------------------------------------------------
+CREATE PROCEDURE ObtenerDisponibilidadAlojamiento
+	@Id_alojamiento INT,
+	@Fecha_Incio DATE,
+	@Fecha_Fin DATE
+AS
+BEGIN 
+	DECLARE @EstaDisponible BIT
+	IF EXISTS (
+        SELECT 1 
+        FROM Reservas 
+        WHERE Alojamiento_id = @Id_Alojamiento
+        AND Estado NOT IN ('Cancelada', 'Rechazada')
+        AND NOT (@Fecha_Fin < Fecha_inicio OR @Fecha_Incio > Fecha_fin)
+    )
+     BEGIN
+        SET @EstaDisponible = 0;
+		PRINT 'Alojamiento NO está DISPONIBLE.';
+    END
+    ELSE
+    BEGIN
+        SET @EstaDisponible = 1;
+		PRINT 'Alojamiento está DISPONIBLE.';
+    END
+END;
+GO
+EXEC ObtenerDisponibilidadAlojamiento 2, '2023-08-10', '2023-08-16';
+GO
+DROP PROCEDURE IF EXISTS ObtenerDisponibilidadAlojamiento;
+GO
 -- -----------------------------------------------------------
 -- Modificar fechas de reserva
 -- -----------------------------------------------------------
@@ -72,7 +102,24 @@ GO
 SELECT * FROM Reservas;
 
 -- -----------------------------------------------------------
--- Contar la cantidad de reservas que tienen los alojamientos
+-- Actualizar Estado De Una Reserva
+-- -----------------------------------------------------------
+CREATE PROCEDURE ActualizarEstadoReserva
+	@Id_reserva INT,
+	@Estado NVARCHAR(50)
+AS
+BEGIN 
+	UPDATE Reservas
+	SET Estado = @Estado
+	WHERE Id = @Id_reserva
+END;
+GO
+EXEC ActualizarEstadoReserva 1, 'Completada';
+GO
+SELECT * FROM Reservas WHERE Id = 1;
+
+-- -----------------------------------------------------------
+-- Contar la cantidad de reservas que tienen todos alojamientos
 -- -----------------------------------------------------------
 CREATE PROCEDURE ContarReservasPorAlojamiento
 AS
@@ -93,30 +140,29 @@ EXEC ContarReservasPorAlojamiento;
 GO
 
 -- -----------------------------------------------------------
--- Contar cuantas reservas confirmadas tiene un alojamiento en especifico
+-- Cantidad de reservas que tiene un alojamiento en especifico
 -- -----------------------------------------------------------
 CREATE PROCEDURE ContarReserva
-	@Id_Alojamiento INT,
-	@Cantidad_Reservas INT OUTPUT
+	@Id_Alojamiento INT
 AS 
 BEGIN
 	SELECT 
-		@Cantidad_Reservas = COUNT(r.Id)
+		a.Id AS AlojamientoId,
+        a.Titulo AS NombreAlojamiento,
+		COUNT(r.Id) AS TotalReservas
 	FROM 
         Alojamientos a
 		LEFT JOIN Reservas r ON a.Id = r.Alojamiento_id
 	WHERE 
         a.Id = @Id_Alojamiento
-        AND r.Estado = 'Confirmada'  -- Solo contar reservas confirmadas
     GROUP BY 
         a.Id, a.Titulo
 END;
 GO
-DECLARE @Cantidad INT;
-EXEC ContarReserva 3, @Cantidad OUTPUT;
-SELECT @Cantidad AS 'Cantidad de Reservas Confirmadas';
+EXEC ContarReserva 3;
 GO
-
+DROP PROCEDURE IF EXISTS ContarReserva;
+GO
 -- -----------------------------------------------------------
 -- Ver todos los metodos de pago
 -- -----------------------------------------------------------
@@ -304,20 +350,4 @@ BEGIN
 END;
 GO
 EXEC CalcularPuntuacionesAlojamientos;
-
--- -----------------------------------------------------------
--- Actualizar Estado De Una Reserva
--- -----------------------------------------------------------
-CREATE PROCEDURE ActualizarEstadoReserva
-	@Id_reserva INT,
-	@Estado NVARCHAR(50)
-AS
-BEGIN 
-	UPDATE Reservas
-	SET Estado = @Estado
-	WHERE Id = @Id_reserva
-END;
 GO
-EXEC ActualizarEstadoReserva 1, 'Terminada';
-GO
-SELECT * FROM Reservas;
