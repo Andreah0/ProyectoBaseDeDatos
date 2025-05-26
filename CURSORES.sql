@@ -32,16 +32,16 @@ DECLARE
 	SELECT r.Id, r.Fecha_Inicio, r.Fecha_Fin, a.Costo_Noche, r.Costo_Total
 	FROM Reservas AS r
 	INNER JOIN Alojamientos AS a ON r.Alojamiento_id = a.Id
-	WHERE r.Estado IN ('Pendiente','Confirmada', 'Completada');
+	WHERE r.Estado IN ('Pendiente','Confirmada');
 
 OPEN Reserva_Cursor;
 
 FETCH NEXT FROM Reserva_Cursor INTO 
 	@Id_Reserva,
-    @Fecha_Inicio,
-    @Fecha_Fin,
-    @Costo_Noche,
-    @Costo_Total;
+    	@Fecha_Inicio,
+    	@Fecha_Fin,
+    	@Costo_Noche,
+    	@Costo_Total;
 
 WHILE @@FETCH_STATUS = 0
 BEGIN
