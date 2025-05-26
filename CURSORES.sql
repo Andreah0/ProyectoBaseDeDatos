@@ -32,7 +32,7 @@ DECLARE
 	SELECT r.Id, r.Fecha_Inicio, r.Fecha_Fin, a.Costo_Noche, r.Costo_Total
 	FROM Reservas AS r
 	INNER JOIN Alojamientos AS a ON r.Alojamiento_id = a.Id
-	WHERE r.Estado = 'Confirmada';
+	WHERE r.Estado IN ('Pendiente','Confirmada', 'Completada');
 
 OPEN Reserva_Cursor;
 
@@ -63,12 +63,14 @@ BEGIN
     BEGIN
         INSERT INTO Auditoria_Reservas (
             Id_Reserva,
+			Fecha_Auditoria,
             Costo_Total,
             Costo_Calculado,
             Diferencia,
             Observacion)
         VALUES (
             @Id_Reserva,
+			GETDATE(),
             @Costo_Total,
 			@Costo_Calculado,
             @Diferencia,
